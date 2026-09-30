@@ -26,3 +26,4 @@
 @media print{.date-bar{display:none!important}}
 .voice-hint{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:9px 11px;border:1px solid #dbe5fb;border-radius:8px;background:#f3f6ff;color:#49658f;font-size:14px}.voice-hint-icon{display:grid;place-items:center;width:25px;height:25px;border-radius:6px;background:#e2eaff;color:#3468ed;font-size:15px;flex:none}#voiceEntry{border-style:solid;color:#315fd4;background:#f4f7ff}#voiceEntry:hover{background:#eaf0ff;border-color:#9fb7ef}
 @media(max-width:760px){#voiceEntry{min-height:42px;padding:7px 9px}.voice-hint{font-size:14px}#itemInput{min-height:128px;font-size:18px}}
+.print-write-space{height:14mm}
