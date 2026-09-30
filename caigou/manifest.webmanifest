@@ -1,0 +1,13 @@
+{
+  "name": "家家采购清单",
+  "short_name": "家家采购",
+  "description": "按客户快速录入、整理和打印采购清单",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#3468ed",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
