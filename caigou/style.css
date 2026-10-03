@@ -11,3 +11,5 @@
 @media(max-width:760px){.entry-name-box{grid-template-columns:minmax(0,1fr) auto}.control-row{grid-template-columns:1fr 1fr}.control-row .font-control{grid-column:1/-1}.manual-grid{grid-template-columns:repeat(3,1fr);gap:7px}}
 .cut-entry{align-self:center}.customer-count{margin:-10px 0 14px}.customer-row{min-height:54px}.customer-row b{font-size:18px}.print-choice{display:grid;grid-template-columns:minmax(0,1fr) auto}.print-choice>label{display:flex;align-items:center;gap:8px;min-width:0}.print-cut{padding-left:10px;border-left:1px solid #dce3ed;color:#315ed6;font-size:14px;white-space:nowrap}
 @media(max-width:520px){.print-choice{grid-template-columns:1fr}.print-cut{padding:8px 0 0 28px;border-left:0;border-top:1px solid #e6eaf1}}
+.print-filters{margin-right:auto}
+@media(max-width:760px){.print-filters{width:100%}.print-filters button{flex:1;padding-inline:8px}}

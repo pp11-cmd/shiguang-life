@@ -139,11 +139,13 @@ function renderUsers(){
   $('#usersList').innerHTML=state.users.length?state.users.map(u=>`<article class="user-card customer-row"><b>${esc(u.name)}</b></article>`).join(''):'<div class="empty-state">录入清单后，客户姓名会自动保存在这里。</div>';
 }
 
-let selectedPrint=new Set();
+let selectedPrint=new Set(),printFilter='pending';
 function printableUsers(){return state.users.filter(u=>(order(u.id)?.items.length||0)>0);}
-function resetPrintSelection(){selectedPrint=new Set(printableUsers().filter(u=>!$('#pendingOnly').checked||derivedStatus(u.id)==='pending').map(u=>u.id));}
+function filteredPrintUsers(){return printableUsers().filter(u=>printFilter==='all'||(printFilter==='cut'&&order(u.id)?.needsCut)||(printFilter==='pending'&&derivedStatus(u.id)==='pending')||(printFilter==='printed'&&derivedStatus(u.id)==='printed'));}
+function resetPrintSelection(){selectedPrint=new Set(filteredPrintUsers().map(u=>u.id));}
 function renderPrintChoices(){
-  const eligible=printableUsers().filter(u=>!$('#pendingOnly').checked||derivedStatus(u.id)==='pending');
+  const eligible=filteredPrintUsers();
+  $$('#printFilters [data-print-filter]').forEach(b=>b.classList.toggle('active',b.dataset.printFilter===printFilter));
   selectedPrint=new Set([...selectedPrint].filter(id=>eligible.some(u=>u.id===id)));
   $('#printChoices').innerHTML=eligible.length?`<section class="print-group"><h3>选择清单和裁剪方式</h3><div class="print-choice-grid">${eligible.map(u=>{const o=order(u.id);return `<article class="print-choice"><label><input type="checkbox" data-print-user="${u.id}" ${selectedPrint.has(u.id)?'checked':''}><span>${esc(u.name)} · ${o.items.length} 条</span></label><label class="print-cut"><input type="checkbox" data-cut-user="${u.id}" ${o.needsCut?'checked':''}>需要裁剪</label></article>`;}).join('')}</div></section>`:'<div class="empty-state">没有可打印的清单</div>';
 }
@@ -208,9 +210,9 @@ $('#todayFilters').onclick=e=>{const b=e.target.closest('[data-filter]');if(b){t
 $('#todayList').onclick=e=>{
   const b=e.target.closest('[data-action]');if(!b)return;const id=b.dataset.id,o=order(id,true);
   if(b.dataset.action==='entry')selectUser(id,true);
-  if(b.dataset.action==='go-print'){selectedPrint=new Set([id]);$('#pendingOnly').checked=false;setView('print');selectedPrint=new Set([id]);renderPrint();}
+  if(b.dataset.action==='go-print'){printFilter='all';selectedPrint=new Set([id]);setView('print');selectedPrint=new Set([id]);renderPrint();}
   if(b.dataset.action==='undo-print'){setOrderStatus(o,'pending');save();renderAll();}
-  if(b.dataset.action==='reprint'){selectedPrint=new Set([id]);$('#pendingOnly').checked=false;setView('print');selectedPrint=new Set([id]);renderPrint();}
+  if(b.dataset.action==='reprint'){printFilter='all';selectedPrint=new Set([id]);setView('print');selectedPrint=new Set([id]);renderPrint();}
 };
 
 function useTypedName(){const name=$('#entryNameInput').value.trim();if(!name)return toast('请输入客户姓名。');let u=state.users.find(x=>x.name===name);if(!u){u={id:uid(),name,needsCut:false};state.users.push(u);toast('已自动保存为常用客户');}selectUser(u.id,false);$('#entryNameInput').blur();}
@@ -233,9 +235,9 @@ $('#quickAdd').onclick=()=>{const name=$('#quickName').value.trim(),qty=$('#quic
 
 $('#exportCustomers').onclick=()=>{if(!state.users.length)return toast('还没有客户姓名。');const csv='\ufeff姓名\r\n'+state.users.map(u=>`"${u.name.replaceAll('"','""')}"`).join('\r\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='客户名单-'+localDate()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('客户名单已导出');};
 
-$('#pendingOnly').onchange=()=>{resetPrintSelection();renderPrint();};
+$('#printFilters').onclick=e=>{const b=e.target.closest('[data-print-filter]');if(!b)return;printFilter=b.dataset.printFilter;resetPrintSelection();renderPrint();};
 $('#printChoices').onchange=e=>{const c=e.target.closest('[data-print-user]'),cut=e.target.closest('[data-cut-user]');if(c)c.checked?selectedPrint.add(c.dataset.printUser):selectedPrint.delete(c.dataset.printUser);if(cut){const o=order(cut.dataset.cutUser,true);o.needsCut=cut.checked;save();renderToday();}makePreview();};
-$('#selectAllPrint').onclick=()=>{selectedPrint=new Set(printableUsers().filter(u=>!$('#pendingOnly').checked||derivedStatus(u.id)==='pending').map(u=>u.id));renderPrint();};
+$('#selectAllPrint').onclick=()=>{selectedPrint=new Set(filteredPrintUsers().map(u=>u.id));renderPrint();};
 $('#selectNonePrint').onclick=()=>{selectedPrint.clear();renderPrint();};
 for(const id of ['layoutMode','orientation','density','fontSize','manualCols','manualRows','blankRows'])$('#'+id).addEventListener('input',makePreview);
 $('#printButton').onclick=()=>{makePreview();if($('#printButton').disabled)return;pendingPrintIds=[...selectedPrint];clearTimeout(printPromptTimer);window.print();printPromptTimer=setTimeout(()=>{if(!$('#printDialog').open)$('#printDialog').showModal();},800);};
