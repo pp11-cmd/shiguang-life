@@ -39,12 +39,11 @@
         <section class="panel input-panel">
           <div class="panel-heading"><div><span class="eyebrow">批量录入</span><h2 id="entryName">请选择用户</h2></div><button id="voiceEntry" class="voice-button" type="button">🎙 键盘语音</button></div>
           <textarea id="itemInput" rows="6" lang="zh-CN" placeholder="例如：黄瓜二斤 尖椒一斤 油菜半斤&#10;可直接换行、粘贴或使用手机键盘语音"></textarea>
-          <div class="input-actions"><button id="clearInput">清空</button><button class="primary" id="recognizeButton">识别清单</button></div>
-          <div id="draftSection" hidden><div class="result-heading"><h3>识别结果 <span id="draftCount"></span></h3><span id="recognizeHint"></span></div><div id="draftItems" class="draft-list"></div><button class="primary wide" id="confirmDraft">加入这家清单</button></div>
+          <div class="input-actions"><button id="clearInput">清空</button><button class="primary" id="recognizeButton">直接加入清单</button></div>
           <details class="quick-details"><summary>快捷点选</summary><div id="categoryButtons" class="category-buttons"></div><div id="productButtons" class="choice-buttons"></div><div class="quick-grid"><input id="quickName" placeholder="商品"><input id="quickQty" inputmode="decimal" placeholder="数量"><select id="quickUnit"><option value="">不填单位</option><option>斤</option><option>两</option><option>个</option><option>颗</option><option>捆</option><option>袋</option><option>包</option><option>箱</option><option>瓶</option><option>盒</option><option>根</option><option>条</option><option>元</option></select><button id="quickAdd" class="primary">加入</button></div><div id="qtyButtons" class="choice-buttons compact"></div></details>
         </section>
         <section class="panel order-panel">
-          <div class="panel-heading"><div><span class="eyebrow">已加入 <span id="itemCount">0 条</span></span><h2 id="activeName">采购清单</h2></div><span id="cutBadge" class="cut-badge"></span></div>
+          <div class="panel-heading"><div><span class="eyebrow">已加入 <span id="itemCount">0 条</span></span><h2 id="activeName">采购清单</h2></div><label class="check-label cut-entry"><input id="entryNeedsCut" type="checkbox">需要裁剪</label></div>
           <div id="items" class="order-items"></div>
           <button class="primary wide finish-button" id="finishNext">完成并下一家</button>
         </section>
@@ -52,9 +51,8 @@
     </section>
 
     <section id="usersView" class="view" hidden>
-      <div class="view-title"><div><span class="eyebrow">可选管理</span><h2>常用客户</h2></div><span id="userCount" class="muted"></span></div>
-      <form id="userForm" class="panel user-form"><input id="userName" maxlength="80" placeholder="姓名" required><label class="check-label"><input id="userNeedsCut" type="checkbox">需要剪裁</label><button class="primary">添加用户</button></form>
-      <div class="toolbar"><input id="userSearch" type="search" placeholder="搜索姓名"></div>
+      <div class="view-title"><div><span class="eyebrow">自动记住</span><h2>历史客户</h2></div><button class="primary" id="exportCustomers">导出客户名单</button></div>
+      <p id="userCount" class="muted customer-count"></p>
       <div id="usersList" class="card-list"></div>
     </section>
 
