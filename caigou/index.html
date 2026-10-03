@@ -34,7 +34,7 @@
     </section>
 
     <section id="entryView" class="view" hidden>
-      <div class="entry-person-bar"><button id="previousUser" aria-label="上一家">‹</button><select id="entryUser" aria-label="当前用户"></select><button id="nextUser" aria-label="下一家">›</button><span id="entryStatus" class="status-chip"></span></div>
+      <div class="entry-person-bar"><button id="previousUser" aria-label="上一家">‹</button><div class="entry-name-box"><input id="entryNameInput" list="entryNameHistory" placeholder="输入客户姓名"><datalist id="entryNameHistory"></datalist><button id="useEntryName" class="primary">确定</button></div><button id="nextUser" aria-label="下一家">›</button><span id="entryStatus" class="status-chip"></span></div>
       <div class="entry-layout">
         <section class="panel input-panel">
           <div class="panel-heading"><div><span class="eyebrow">批量录入</span><h2 id="entryName">请选择用户</h2></div><button id="voiceEntry" class="voice-button" type="button">🎙 键盘语音</button></div>
@@ -46,14 +46,13 @@
         <section class="panel order-panel">
           <div class="panel-heading"><div><span class="eyebrow">已加入 <span id="itemCount">0 条</span></span><h2 id="activeName">采购清单</h2></div><span id="cutBadge" class="cut-badge"></span></div>
           <div id="items" class="order-items"></div>
-          <div class="order-tools"><button id="copyPrevious">复制上一家</button><button id="copyOrder">复制此单</button></div>
           <button class="primary wide finish-button" id="finishNext">完成并下一家</button>
         </section>
       </div>
     </section>
 
     <section id="usersView" class="view" hidden>
-      <div class="view-title"><div><span class="eyebrow">长期保存</span><h2>用户清单</h2></div><span id="userCount" class="muted"></span></div>
+      <div class="view-title"><div><span class="eyebrow">可选管理</span><h2>常用客户</h2></div><span id="userCount" class="muted"></span></div>
       <form id="userForm" class="panel user-form"><input id="userName" maxlength="80" placeholder="姓名" required><label class="check-label"><input id="userNeedsCut" type="checkbox">需要剪裁</label><button class="primary">添加用户</button></form>
       <div class="toolbar"><input id="userSearch" type="search" placeholder="搜索姓名"></div>
       <div id="usersList" class="card-list"></div>
@@ -62,7 +61,8 @@
     <section id="printView" class="view" hidden>
       <div class="view-title"><div><span class="eyebrow">A4 自适应</span><h2>打印</h2><p id="layoutInfo" class="muted"></p></div><button class="primary" id="printButton">打印 / 导出 PDF</button></div>
       <div class="print-controls panel">
-        <div class="control-row"><label>纸张<select id="orientation"><option value="portrait">竖版</option><option value="landscape">横版</option></select></label><label>密度<select id="density"><option value="comfortable">舒适</option><option value="standard" selected>标准</option><option value="compact">省纸</option></select></label><label class="font-control">字号 <output id="fontValue">13</output><input id="fontSize" type="range" min="11" max="16" value="13" step="1"></label></div>
+        <div class="control-row"><label>版式<select id="layoutMode"><option value="smart" selected>自动省纸</option><option value="cut">整齐裁剪</option><option value="custom">自己排版</option></select></label><label>纸张<select id="orientation"><option value="portrait">竖版</option><option value="landscape">横版</option></select></label><label>疏密<select id="density"><option value="comfortable">宽松</option><option value="standard" selected>适中</option><option value="compact">紧凑</option></select></label><label class="font-control">字号 <output id="fontValue">13</output><input id="fontSize" type="range" min="11" max="16" value="13" step="1"></label></div>
+        <details class="manual-layout" id="manualLayout"><summary>自己调整排版</summary><div class="manual-grid"><label>每页列数<select id="manualCols"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label><label>每页行数<select id="manualRows"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label><label>手写空白<select id="blankRows"><option value="0">不留</option><option value="1">1 行</option><option value="2" selected>2 行</option><option value="3">3 行</option></select></label></div></details>
         <div class="selection-actions"><label class="check-label"><input id="pendingOnly" type="checkbox" checked>只选待打印</label><button id="selectAllPrint">全选</button><button id="selectNonePrint">清空选择</button></div>
         <div id="printChoices"></div>
       </div>
@@ -74,7 +74,7 @@
   <nav class="bottom-nav" aria-label="主导航">
     <button data-view="today" class="active"><span>⌂</span>今日</button>
     <button data-view="entry"><span>＋</span>录入</button>
-    <button data-view="users"><span>♙</span>用户</button>
+    <button data-view="users"><span>♙</span>客户</button>
     <button data-view="print"><span>▤</span>打印</button>
   </nav>
 

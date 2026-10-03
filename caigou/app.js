@@ -98,21 +98,22 @@ function renderToday(){
     const s=derivedStatus(u.id),o=order(u.id),count=o?.items.length||0;
     const actions=s==='printed'?`<button data-action="reprint" data-id="${u.id}">补打</button><button data-action="undo-print" data-id="${u.id}">撤销</button>`:`<button class="${s==='pending'?'':'primary'}" data-action="${s==='pending'?'go-print':'entry'}" data-id="${u.id}">${s==='pending'?'打印':'录入'}</button>`;
     return `<article class="person-card"><button class="person-main" data-action="entry" data-id="${u.id}"><span class="person-name">${esc(u.name)}</span><span class="person-meta">${statusChip(s)}${u.needsCut?'<span class="cut-badge">需裁</span>':''}<span>${count} 条</span></span></button><div class="person-actions">${actions}</div></article>`;
-  }).join(''):'<div class="empty-state">暂无用户，请先到“用户”中添加。</div>';
+  }).join(''):'<div class="empty-state">还没有清单，点“开始录入”直接填写姓名。</div>';
 }
 
 function renderEntry(){
   if(!activeUser()&&state.users.length)day().activeUserId=state.users[0].id;
   const u=activeUser(),o=activeOrder(false);
-  $('#entryUser').innerHTML=state.users.length?state.users.map(x=>`<option value="${x.id}" ${x.id===u?.id?'selected':''}>${esc(x.name)}</option>`).join(''):'<option>请先添加用户</option>';
+  $('#entryNameHistory').innerHTML=state.users.map(x=>`<option value="${esc(x.name)}"></option>`).join('');
+  if(document.activeElement!==$('#entryNameInput'))$('#entryNameInput').value=u?.name||'';
   const index=u?state.users.findIndex(x=>x.id===u.id):-1;
   $('#previousUser').disabled=index<=0;$('#nextUser').disabled=index<0||index>=state.users.length-1;
-  $('#entryName').textContent=u?.name||'请先添加用户';$('#activeName').textContent=u?.name||'采购清单';
+  $('#entryName').textContent=u?.name||'输入客户姓名';$('#activeName').textContent=u?.name||'采购清单';
   $('#entryStatus').className='status-chip '+(u?'status-'+derivedStatus(u.id):'status-unrecorded');$('#entryStatus').textContent=u?statusText[derivedStatus(u.id)]:'未选择';
   $('#cutBadge').textContent=u?.needsCut?'需裁剪':'无需裁剪';$('#cutBadge').hidden=!u;
   const items=o?.items||[];$('#itemCount').textContent=items.length+' 条';
   $('#items').innerHTML=items.length?items.map((it,i)=>`<div class="order-item"><span class="order-number">${i+1}</span><span class="order-text">${esc(ListCore.display(it.text))}</span><span class="item-actions"><button data-action="edit-item" data-id="${it.id}">改</button><button class="danger" data-action="delete-item" data-id="${it.id}">删</button></span></div>`).join(''):'<div class="empty-state">还没有商品</div>';
-  const disabled=!u;for(const id of ['voiceEntry','recognizeButton','quickAdd','finishNext','copyPrevious','copyOrder'])$('#'+id).disabled=disabled;
+  const disabled=!u;for(const id of ['voiceEntry','recognizeButton','quickAdd','finishNext'])$('#'+id).disabled=disabled;
   renderDraft();drawProducts();
 }
 function renderDraft(){
@@ -156,23 +157,51 @@ function renderPrintChoices(){
   $('#printChoices').innerHTML=group(true,'需要剪裁')+group(false,'无需剪裁')||'<div class="empty-state">没有可打印的清单</div>';
 }
 function printConfig(){
-  const orientation=$('#orientation').value,density=$('#density').value,font=Number($('#fontSize').value);const landscape=orientation==='landscape';
-  const grid=landscape?(density==='comfortable'?[2,2]:density==='standard'?[3,2]:[3,3]):(density==='comfortable'?[1,2]:density==='standard'?[2,2]:[2,3]);
-  return {orientation,density,font,width:landscape?297:210,height:landscape?210:297,cols:grid[0],rows:grid[1],gap:density==='compact'?2:3,pad:density==='comfortable'?3.2:density==='standard'?2.7:2.2,write:density==='comfortable'?14:density==='standard'?11:8};
+  const mode=$('#layoutMode').value,orientation=$('#orientation').value,density=$('#density').value,font=Number($('#fontSize').value),landscape=orientation==='landscape';
+  const fixedGrid=landscape?(density==='comfortable'?[2,2]:density==='standard'?[3,2]:[3,3]):(density==='comfortable'?[1,2]:density==='standard'?[2,2]:[2,3]);
+  const smartCols=landscape?(density==='comfortable'?2:density==='standard'?3:4):(density==='comfortable'?1:density==='standard'?2:3);
+  const cols=mode==='custom'?Number($('#manualCols').value):(mode==='smart'?smartCols:fixedGrid[0]);
+  const rows=mode==='custom'?Number($('#manualRows').value):fixedGrid[1];
+  const gap=density==='compact'?2:3,pad=density==='comfortable'?3.2:density==='standard'?2.7:2.2,row=Math.max(5.5,font*.3528*1.38),blankRows=Number($('#blankRows').value);
+  return {mode,orientation,density,font,width:landscape?297:210,height:landscape?210:297,cols,rows,gap,pad,row,blankRows,write:blankRows*row};
 }
 function chunkOrder(u,cfg,slotH){
-  const o=order(u.id),row=Math.max(5.5,cfg.font*.3528*1.38),header=cfg.font*.3528*1.7,available=slotH-cfg.pad*2-header-cfg.write-2;const per=Math.max(1,Math.floor(available/row));const chunks=[];
-  for(let i=0;i<o.items.length;i+=per)chunks.push(o.items.slice(i,i+per));return {chunks,row};
+  const o=order(u.id),header=cfg.font*.3528*1.7,available=slotH-cfg.pad*2-header-cfg.write-2,per=Math.max(1,Math.floor(available/cfg.row)),chunks=[];
+  for(let i=0;i<o.items.length;i+=per)chunks.push(o.items.slice(i,i+per));return chunks;
+}
+function cardNode(card,cfg,width,height,smart=false){
+  const node=document.createElement('section');node.className='print-card'+(smart?' smart':'');node.style.cssText=`width:${width}mm;${height?`height:${height}mm;`:''}padding:${cfg.pad}mm`;
+  node.innerHTML=`<h3>${esc(card.u.name)}${card.total>1?` ${card.index+1}/${card.total}`:''}</h3>`+card.items.map(i=>`<div class="print-row" style="min-height:${cfg.row}mm"><span class="print-label">${esc(ListCore.display(i.text))}</span><span class="write-column"></span></div>`).join('')+`<div class="print-write-space" style="min-height:${cfg.write}mm"></div>`;return node;
+}
+function addSheet(page,cfg,pageIndex,total,innerW,innerH,slotW,slotH){
+  const sheet=document.createElement('article');sheet.className='print-sheet';sheet.style.cssText=`width:${cfg.width}mm;height:${cfg.height}mm;padding:7mm 7mm 12mm;font-size:${cfg.font}pt`;
+  const grid=document.createElement('div');grid.className='sheet-grid'+(cfg.mode==='smart'?' smart-grid':'');
+  if(cfg.mode==='smart'){
+    grid.style.cssText=`width:${innerW}mm;height:${innerH}mm;grid-template-columns:repeat(${cfg.cols},${slotW}mm);gap:${cfg.gap}mm`;
+    for(const column of page.columns){const columnNode=document.createElement('div');columnNode.className='smart-column';columnNode.style.setProperty('--smart-gap',cfg.gap+'mm');for(const card of column)columnNode.append(cardNode(card,cfg,slotW,card.height,true));grid.append(columnNode);}
+  }else{
+    grid.style.cssText=`width:${innerW}mm;height:${innerH}mm;grid-template-columns:repeat(${cfg.cols},${slotW}mm);grid-template-rows:repeat(${cfg.rows},${slotH}mm);gap:${cfg.gap}mm`;
+    for(const card of page.cards)grid.append(cardNode(card,cfg,slotW,slotH));
+  }
+  sheet.append(grid);const footer=document.createElement('div');footer.className='sheet-footer';footer.textContent=`${state.selectedDate} · ${page.group} · 第 ${pageIndex+1}/${total} 页`;sheet.append(footer);$('#papers').append(sheet);
 }
 function makePreview(){
-  const cfg=printConfig();$('#fontValue').textContent=cfg.font;$('#pageStyle').textContent=`@page{size:A4 ${cfg.orientation};margin:0}`;
+  const cfg=printConfig();$('#fontValue').textContent=cfg.font;$('#pageStyle').textContent=`@page{size:A4 ${cfg.orientation};margin:0}`;if(cfg.mode==='custom')$('#manualLayout').open=true;
   const users=state.users.filter(u=>selectedPrint.has(u.id)&&(order(u.id)?.items.length||0));$('#papers').replaceChildren();
   if(!users.length){$('#papers').innerHTML='<div class="empty-state">请选择要打印的用户</div>';$('#layoutInfo').textContent='未选择清单';$('#printButton').disabled=true;return;}
-  const innerW=cfg.width-14,innerH=cfg.height-19,slotW=(innerW-(cfg.cols-1)*cfg.gap)/cfg.cols,slotH=(innerH-(cfg.rows-1)*cfg.gap)/cfg.rows,slots=cfg.cols*cfg.rows;
-  const groups=[{name:'需要剪裁',users:users.filter(u=>u.needsCut)},{name:'无需剪裁',users:users.filter(u=>!u.needsCut)}].filter(g=>g.users.length);const pages=[];
-  for(const group of groups){const cards=[];for(const u of group.users){const result=chunkOrder(u,cfg,slotH);result.chunks.forEach((items,index)=>cards.push({u,items,index,total:result.chunks.length,row:result.row}));}for(let i=0;i<cards.length;i+=slots)pages.push({group:group.name,cards:cards.slice(i,i+slots)});}
-  pages.forEach((page,pageIndex)=>{const sheet=document.createElement('article');sheet.className='print-sheet';sheet.style.cssText=`width:${cfg.width}mm;height:${cfg.height}mm;padding:7mm 7mm 12mm;font-size:${cfg.font}pt`;const grid=document.createElement('div');grid.className='sheet-grid';grid.style.cssText=`width:${innerW}mm;height:${innerH}mm;grid-template-columns:repeat(${cfg.cols},${slotW}mm);grid-template-rows:repeat(${cfg.rows},${slotH}mm);gap:${cfg.gap}mm`;for(const card of page.cards){const node=document.createElement('section');node.className='print-card';node.style.cssText=`width:${slotW}mm;height:${slotH}mm;padding:${cfg.pad}mm`;node.innerHTML=`<h3>${esc(card.u.name)}${card.total>1?` ${card.index+1}/${card.total}`:''}</h3>`+card.items.map(i=>`<div class="print-row" style="min-height:${card.row}mm"><span class="print-label">${esc(ListCore.display(i.text))}</span><span class="write-column"></span></div>`).join('')+`<div class="print-write-space" style="min-height:${cfg.write}mm"></div>`;grid.append(node);}sheet.append(grid);const footer=document.createElement('div');footer.className='sheet-footer';footer.textContent=`${state.selectedDate} · ${page.group} · 第 ${pageIndex+1}/${pages.length} 页`;sheet.append(footer);$('#papers').append(sheet);});
-  $('#layoutInfo').textContent=`${users.length} 家 · ${pages.length} 页 · ${cfg.cols}×${cfg.rows} · ${cfg.font} 磅`;$('#printButton').disabled=false;scalePapers();
+  const innerW=cfg.width-14,innerH=cfg.height-19,slotW=(innerW-(cfg.cols-1)*cfg.gap)/cfg.cols,slotH=cfg.mode==='smart'?null:(innerH-(cfg.rows-1)*cfg.gap)/cfg.rows,groups=[{name:'需要剪裁',users:users.filter(u=>u.needsCut)},{name:'无需剪裁',users:users.filter(u=>!u.needsCut)}].filter(g=>g.users.length),pages=[];
+  for(const group of groups){
+    if(cfg.mode==='smart'){
+      const maxItems=Math.max(1,Math.floor((innerH-cfg.pad*2-cfg.font*.3528*1.7-cfg.write-2)/cfg.row)),cards=[];
+      for(const u of group.users){const items=order(u.id).items,total=Math.ceil(items.length/maxItems);for(let i=0;i<total;i++){const part=items.slice(i*maxItems,(i+1)*maxItems);cards.push({u,items:part,index:i,total,height:Math.min(innerH,cfg.pad*2+cfg.font*.3528*1.7+part.length*cfg.row+cfg.write+2)});}}
+      let page={group:group.name,columns:Array.from({length:cfg.cols},()=>[]),used:Array(cfg.cols).fill(0)};pages.push(page);
+      for(const card of cards){let column=-1,best=Infinity;for(let i=0;i<cfg.cols;i++){const needed=page.used[i]+(page.used[i]?cfg.gap:0)+card.height;if(needed<=innerH&&needed<best){column=i;best=needed;}}if(column<0){page={group:group.name,columns:Array.from({length:cfg.cols},()=>[]),used:Array(cfg.cols).fill(0)};pages.push(page);column=0;}page.columns[column].push(card);page.used[column]+= (page.used[column]?cfg.gap:0)+card.height;}
+    }else{
+      const cards=[];for(const u of group.users){const chunks=chunkOrder(u,cfg,slotH);chunks.forEach((items,index)=>cards.push({u,items,index,total:chunks.length}));}const slots=cfg.cols*cfg.rows;for(let i=0;i<cards.length;i+=slots)pages.push({group:group.name,cards:cards.slice(i,i+slots)});
+    }
+  }
+  pages.forEach((page,index)=>addSheet(page,cfg,index,pages.length,innerW,innerH,slotW,slotH));
+  const modeName={smart:'自动省纸',cut:'整齐裁剪',custom:'自己排版'}[cfg.mode];$('#layoutInfo').textContent=`${users.length} 家 · ${pages.length} 页 · ${modeName} · ${cfg.cols} 列 · ${cfg.font} 磅`;$('#printButton').disabled=false;scalePapers();
 }
 function renderPrint(){renderPrintChoices();makePreview();}
 function scalePapers(){const w=$('#paperViewport').clientWidth-16;for(const p of $$('#papers .print-sheet')){const scale=Math.min(1,w/p.offsetWidth);p.style.transform=`scale(${scale})`;p.style.transformOrigin='top center';p.style.marginBottom=-(p.offsetHeight*(1-scale))+'px';}}
@@ -182,7 +211,7 @@ function edit(title,label,value,fn){$('#dialogTitle').textContent=title;$('#edit
 function askDelete(title,text,fn){$('#deleteTitle').textContent=title;$('#deleteText').textContent=text;deleteAction=fn;$('#deleteDialog').showModal();}
 
 $$('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
-$('#startEntry').onclick=()=>setView(state.users.length?'entry':'users');
+$('#startEntry').onclick=()=>setView('entry');
 $('#statusStats').onclick=e=>{const b=e.target.closest('[data-filter]');if(b){todayFilter=b.dataset.filter;renderToday();}};
 $('#todayFilters').onclick=e=>{const b=e.target.closest('[data-filter]');if(b){todayFilter=b.dataset.filter;renderToday();}};
 $('#todayList').onclick=e=>{
@@ -193,7 +222,9 @@ $('#todayList').onclick=e=>{
   if(b.dataset.action==='reprint'){selectedPrint=new Set([id]);$('#pendingOnly').checked=false;setView('print');selectedPrint=new Set([id]);renderPrint();}
 };
 
-$('#entryUser').onchange=e=>selectUser(e.target.value,false);
+function useTypedName(){const name=$('#entryNameInput').value.trim();if(!name)return toast('请输入客户姓名。');let u=state.users.find(x=>x.name===name);if(!u){u={id:uid(),name,needsCut:false};state.users.push(u);toast('已自动保存为常用客户');}selectUser(u.id,false);$('#entryNameInput').blur();}
+$('#useEntryName').onclick=useTypedName;
+$('#entryNameInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();useTypedName();}};
 $('#previousUser').onclick=()=>{const i=state.users.findIndex(u=>u.id===activeUser()?.id);if(i>0)selectUser(state.users[i-1].id,false);};
 $('#nextUser').onclick=()=>{const i=state.users.findIndex(u=>u.id===activeUser()?.id);if(i>=0&&i<state.users.length-1)selectUser(state.users[i+1].id,false);};
 $('#voiceEntry').onclick=()=>{const input=$('#itemInput');input.focus({preventScroll:true});input.setSelectionRange(input.value.length,input.value.length);toast('请点手机键盘上的麦克风开始说话');};
@@ -209,8 +240,6 @@ $('#draftItems').onclick=e=>{
 $('#confirmDraft').onclick=()=>{const o=activeOrder(true);if(!o||!draft.length||draftCommitted)return;o.items.push(...draft.map(x=>({id:uid(),text:x.text})));setOrderStatus(o,'pending');rememberProducts(draft);draftCommitted=true;save();renderAll();$('#itemInput').blur();toast(`已加入 ${draft.length} 条商品`);};
 $('#items').onclick=e=>{const b=e.target.closest('[data-action]');if(!b)return;const o=activeOrder(false);if(!o)return;const index=o.items.findIndex(i=>i.id===b.dataset.id),it=o.items[index];if(!it)return;if(b.dataset.action==='delete-item')askDelete('删除商品',`删除“${ListCore.display(it.text)}”？`,()=>{o.items.splice(index,1);setOrderStatus(o,'pending');save();renderAll();});if(b.dataset.action==='edit-item')edit('修改商品','商品和数量',it.text,value=>{const p=ListCore.parse(value);if(p.length!==1){toast('请只填写一条商品。');return false;}it.text=p[0].text;setOrderStatus(o,'pending');rememberProducts(p);});};
 $('#finishNext').onclick=()=>{const u=activeUser(),o=activeOrder(true);if(!u||!o.items.length)return toast('请先加入商品。');setOrderStatus(o,'pending');const i=state.users.findIndex(x=>x.id===u.id);const next=state.users[i+1];save();renderAll();if(next){day().activeUserId=next.id;draft=[];draftCommitted=false;$('#itemInput').value='';save();renderAll();toast('已完成，进入下一家');}else{setView('today');toast('今天的最后一家已完成');}};
-$('#copyPrevious').onclick=()=>{const u=activeUser(),o=activeOrder(true),i=state.users.findIndex(x=>x.id===u?.id);if(i<=0)return toast('前面没有用户。');const prev=order(state.users[i-1].id);if(!prev?.items.length)return toast('上一家没有商品。');o.items.push(...prev.items.map(x=>({id:uid(),text:x.text})));setOrderStatus(o,'pending');rememberProducts(prev.items);save();renderAll();toast(`已复制 ${prev.items.length} 条`);};
-$('#copyOrder').onclick=async()=>{const u=activeUser(),o=activeOrder(false);if(!u||!o?.items.length)return toast('当前清单为空。');const text=[u.name,...o.items.map(i=>ListCore.display(i.text))].join('\n');try{await navigator.clipboard.writeText(text);toast('此单已复制');}catch{edit('复制此单','长按选择并复制',text,()=>false);}};
 
 $('#categoryButtons').onclick=e=>{const b=e.target.closest('[data-category]');if(b){category=b.dataset.category;drawProducts();}};
 $('#productButtons').onclick=e=>{const b=e.target.closest('[data-product]');if(!b)return;$('#quickName').value=b.dataset.product;const r=state.productMemory.find(x=>x.name===b.dataset.product);if(r?.unit)$('#quickUnit').value=r.unit;};
@@ -226,7 +255,7 @@ $('#pendingOnly').onchange=()=>{resetPrintSelection();renderPrint();};
 $('#printChoices').onchange=e=>{const c=e.target.closest('[data-print-user]');if(!c)return;c.checked?selectedPrint.add(c.dataset.printUser):selectedPrint.delete(c.dataset.printUser);makePreview();};
 $('#selectAllPrint').onclick=()=>{selectedPrint=new Set(printableUsers().filter(u=>!$('#pendingOnly').checked||derivedStatus(u.id)==='pending').map(u=>u.id));renderPrint();};
 $('#selectNonePrint').onclick=()=>{selectedPrint.clear();renderPrint();};
-for(const id of ['orientation','density','fontSize'])$('#'+id).addEventListener('input',makePreview);
+for(const id of ['layoutMode','orientation','density','fontSize','manualCols','manualRows','blankRows'])$('#'+id).addEventListener('input',makePreview);
 $('#printButton').onclick=()=>{makePreview();if($('#printButton').disabled)return;pendingPrintIds=[...selectedPrint];clearTimeout(printPromptTimer);window.print();printPromptTimer=setTimeout(()=>{if(!$('#printDialog').open)$('#printDialog').showModal();},800);};
 window.addEventListener('afterprint',()=>{clearTimeout(printPromptTimer);if(pendingPrintIds.length&&!$('#printDialog').open)$('#printDialog').showModal();});
 $('#retryPrint').onclick=()=>{$('#printDialog').close();clearTimeout(printPromptTimer);window.print();printPromptTimer=setTimeout(()=>{if(!$('#printDialog').open)$('#printDialog').showModal();},800);};
