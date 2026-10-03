@@ -235,7 +235,7 @@ $('#quickAdd').onclick=()=>{const name=$('#quickName').value.trim(),qty=$('#quic
 
 $('#exportCustomers').onclick=()=>{if(!state.users.length)return toast('还没有客户姓名。');const csv='\ufeff姓名\r\n'+state.users.map(u=>`"${u.name.replaceAll('"','""')}"`).join('\r\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='客户名单-'+localDate()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('客户名单已导出');};
 
-$('#printFilters').onclick=e=>{const b=e.target.closest('[data-print-filter]');if(!b)return;printFilter=b.dataset.printFilter;resetPrintSelection();renderPrint();};
+if($('#printFilters'))$('#printFilters').onclick=e=>{const b=e.target.closest('[data-print-filter]');if(!b)return;printFilter=b.dataset.printFilter;resetPrintSelection();renderPrint();};
 $('#printChoices').onchange=e=>{const c=e.target.closest('[data-print-user]'),cut=e.target.closest('[data-cut-user]');if(c)c.checked?selectedPrint.add(c.dataset.printUser):selectedPrint.delete(c.dataset.printUser);if(cut){const o=order(cut.dataset.cutUser,true);o.needsCut=cut.checked;save();renderToday();}makePreview();};
 $('#selectAllPrint').onclick=()=>{selectedPrint=new Set(filteredPrintUsers().map(u=>u.id));renderPrint();};
 $('#selectNonePrint').onclick=()=>{selectedPrint.clear();renderPrint();};
@@ -256,4 +256,4 @@ $('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)]
 $('#importData').onclick=()=>$('#importFile').click();
 $('#importFile').onchange=async()=>{const file=$('#importFile').files[0];if(!file)return;try{if(file.size>8*1024*1024)throw Error();const imported=migrate(JSON.parse(await file.text()));askDelete('导入备份',`导入 ${imported.users.length} 位用户及历史清单？同名用户会合并。`,()=>{const idMap=new Map();for(const iu of imported.users){let target=state.users.find(u=>u.name===iu.name);if(!target){target={...iu,id:uid()};state.users.push(target);}idMap.set(iu.id,target.id);}for(const [date,idDay] of Object.entries(imported.days)){if(!state.days[date])state.days[date]={orders:[],activeUserId:null};for(const io of idDay.orders){const userId=idMap.get(io.userId);if(!userId)continue;let target=state.days[date].orders.find(o=>o.userId===userId);if(!target){target={userId,items:[],status:'unrecorded',needsCut:!!io.needsCut};state.days[date].orders.push(target);}target.items.push(...io.items.map(i=>({id:uid(),text:i.text})));if(io.needsCut)target.needsCut=true;if(io.status==='printed')target.status='printed';else if(target.items.length)target.status='pending';}}storageFailed=false;save();renderAll();toast('备份已导入');});}catch{toast('无法读取这个备份文件。');}finally{$('#importFile').value='';}};
 
-drawProducts();renderAll();save();
+drawProducts();renderAll();save();setView('entry');

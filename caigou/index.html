@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.svg">
   <link rel="apple-touch-icon" href="favicon.svg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=7">
   <style id="pageStyle">@page{size:A4 portrait;margin:0}</style>
 </head>
 <body>
@@ -84,6 +84,6 @@
 <dialog id="deleteDialog"><h2 id="deleteTitle">确认删除？</h2><p id="deleteText"></p><div class="dialog-actions"><button id="cancelDelete">保留</button><button class="danger" id="confirmDelete">删除</button></div></dialog>
 <dialog id="printDialog"><h2>打印完成了吗？</h2><p>确认成功后，所选用户会标记为“已打印”。</p><div class="dialog-actions vertical-mobile"><button id="retryPrint">未成功，重新打印</button><button class="primary" id="confirmPrinted">成功并标记已打印</button></div></dialog>
 
-<script src="core.js"></script><script src="app.js"></script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+<script src="core.js?v=7"></script><script src="app.js?v=7"></script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{}));</script>
 </body>
 </html>
