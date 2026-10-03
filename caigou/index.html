@@ -1,17 +1,91 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#3468ed"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="家家采购"><title>家家采购清单</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="favicon.svg"><link rel="apple-touch-icon" href="favicon.svg"><link rel="stylesheet" href="style.css"><style id="pageStyle">@page{size:A4 portrait;margin:0}</style></head>
-<body><div id="app"><header><div class="brand"><span class="mark" aria-label="家家采购"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 14 16 5l11 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13M13 27v-8h6v8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h1>家家采购清单</h1><span id="saveStatus">本地保存</span></div></div><button class="primary" id="previewButton">打印预览</button></header>
-<nav aria-label="页面"><button class="tab active" data-view="entry">快速录入</button><button class="tab" data-view="list">全部清单 <span id="totalBadge">0</span></button></nav>
-<div class="date-bar"><label for="orderDate">采购日期</label><input id="orderDate" type="date"><button id="todayDate">今天</button><select id="savedDates" aria-label="历史清单"><option value="">历史清单</option></select></div><main><section id="entryView" class="workspace"><div class="input-stack"><aside class="panel customer-panel"><div class="section-head"><h2>客户</h2><span id="familyCount" class="muted"></span></div><form id="familyForm"><label for="familyName" class="sr-only">客户名称</label><div class="input-row"><input id="familyName" placeholder="客户名称" list="customerHistory" maxlength="80" required><button class="primary">添加</button></div><datalist id="customerHistory"></datalist></form><div id="familyList"></div></aside>
-<section class="panel editor"><div id="editorEmpty" class="empty"><h2>请先添加客户</h2></div><div id="editorBody" hidden><div class="entry-toolbar"><div class="mode-tabs"><button class="selected" data-mode="quick">点选</button><button data-mode="single">单条</button><button data-mode="batch">批量</button></div><button type="button" id="voiceEntry" title="切换到批量输入，再点手机键盘上的麦克风"><svg width="16" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="1" width="8" height="14" rx="4"/><path d="M2 10v2a8 8 0 0 0 16 0v-2M10 20v3M6 23h8"/></svg>键盘语音</button></div><form id="quickForm" class="quick-panel">
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#315ee7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="家家采购">
+  <title>家家采购清单</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <style id="pageStyle">@page{size:A4 portrait;margin:0}</style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 14 16 5l11 9M8 13v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13M13 27v-8h6v8"/></svg></span><div><h1>家家采购</h1><span id="saveStatus">本地保存</span></div></div>
+    <div class="date-controls"><input id="orderDate" type="date" aria-label="采购日期"><button id="todayDate">今天</button><select id="savedDates" aria-label="历史日期"><option value="">历史日期</option></select></div>
+  </header>
 
-<div class="step-label"><label for="quickName">商品</label></div>
-<div id="categoryButtons" class="category-buttons" aria-label="商品类别"></div><div id="productButtons" class="choice-buttons" aria-label="常用商品"></div>
-<input id="quickName" placeholder="商品名称" maxlength="100" required>
-<div class="quantity-area"><div><div class="step-label"><label for="quickQty">数量</label></div><div id="qtyButtons" class="choice-buttons"></div><input id="quickQty" placeholder="1.5 / 点五" inputmode="decimal" required></div>
-<div><div class="step-label"><label for="quickUnit">单位</label></div><div id="unitButtons" class="choice-buttons"></div><select id="quickUnit" aria-label="单位"><option value="">不填</option><option>斤</option><option>两</option><option>个</option><option>捆</option><option>元</option><option>把</option><option>根</option><option>袋</option><option>盒</option><option>包</option><option>棵</option><option>颗</option><option>块</option><option>瓶</option><option>公斤</option><option>克</option><option>份</option></select></div></div>
-<div class="quick-bottom"><output id="quickResult" aria-live="polite"></output><button class="primary">加入清单</button></div>
-</form><form id="itemForm" hidden><label for="itemInput" id="inputLabel">商品和数量</label><div id="voiceHint" class="voice-hint" hidden><span class="voice-hint-icon">⌨</span><span>点手机键盘上的麦克风，说完后检查文字</span></div><textarea id="itemInput" rows="2" inputmode="text" enterkeyhint="done" lang="zh-CN" placeholder="例如：黄瓜二斤" required></textarea><div class="input-footer"><span id="inputHelp" hidden></span><button class="primary" type="submit">加入清单</button></div><div id="parsePreview" aria-live="polite"></div></form></div></section></div><section class="panel receipt"><div class="section-head receipt-head"><div><span class="eyebrow">已添加 <span id="itemCount">0 条</span></span><h2 id="activeName">采购清单</h2></div><button id="renameFamily">改名</button></div><div id="items"></div></section></section>
-<section id="listView" hidden><div class="section-head"><div><h2>全部采购清单</h2><p class="muted" id="summary"></p></div><button id="backEntry">继续录入</button></div><div id="allFamilies" class="all-families"></div></section>
-<section id="previewView" hidden><div class="preview-toolbar"><div><h2>A4 打印预览</h2><p id="layoutInfo" class="muted"></p></div><div class="preview-actions"><label>纸张方向<select id="orientation"><option value="portrait">竖版</option><option value="landscape">横版</option></select></label><label>字号优先<select id="printSize"><option value="auto">自动 · 清晰优先</option><option value="large">大字 · 更好读</option></select></label><button id="closePreview">返回录入</button><button class="primary" id="printButton">打印 / 导出 PDF</button></div></div><p class="print-tip">A4 · 缩放 100% · 关闭页眉页脚</p><details class="print-selection" open><summary>选择打印内容 <span id="selectedCount"></span></summary><div class="selection-actions"><button id="selectAllPrint">全选</button><button id="selectNonePrint">全不选</button></div><div id="printChoices"></div></details><div id="paperViewport"><div id="papers"></div></div></section>
-</main><footer><div class="backup-tools"><button id="exportData">备份清单</button><button id="importData">导入备份</button><input id="importFile" type="file" accept="application/json,.json" hidden></div></footer></div><div id="toast" role="status" hidden></div><dialog id="editDialog"><form id="editForm"><h2 id="dialogTitle">修改</h2><label for="editInput" id="editLabel">内容</label><textarea id="editInput" rows="2" required></textarea><div class="dialog-actions"><button type="button" id="cancelEdit">取消</button><button class="primary">保存</button></div></form></dialog><dialog id="deleteDialog"><h2>确认删除？</h2><p id="deleteText"></p><div class="dialog-actions"><button id="cancelDelete">保留</button><button class="danger" id="confirmDelete">删除</button></div></dialog><script src="core.js"></script><script src="app.js"></script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script></body></html>
+  <main>
+    <section id="todayView" class="view">
+      <div class="view-title"><div><span class="eyebrow" id="todayLabel"></span><h2>今日清单</h2></div><button class="primary" id="startEntry">开始录入</button></div>
+      <div class="status-stats" id="statusStats">
+        <button data-filter="unrecorded"><b id="unrecordedCount">0</b><span>未录入</span></button>
+        <button data-filter="pending"><b id="pendingCount">0</b><span>待打印</span></button>
+        <button data-filter="printed"><b id="printedCount">0</b><span>已打印</span></button>
+      </div>
+      <div class="toolbar"><div class="segmented" id="todayFilters"><button data-filter="all" class="active">全部</button><button data-filter="unrecorded">未录入</button><button data-filter="pending">待打印</button><button data-filter="printed">已打印</button></div></div>
+      <div id="todayList" class="card-list"></div>
+    </section>
+
+    <section id="entryView" class="view" hidden>
+      <div class="entry-person-bar"><button id="previousUser" aria-label="上一家">‹</button><select id="entryUser" aria-label="当前用户"></select><button id="nextUser" aria-label="下一家">›</button><span id="entryStatus" class="status-chip"></span></div>
+      <div class="entry-layout">
+        <section class="panel input-panel">
+          <div class="panel-heading"><div><span class="eyebrow">批量录入</span><h2 id="entryName">请选择用户</h2></div><button id="voiceEntry" class="voice-button" type="button">🎙 键盘语音</button></div>
+          <textarea id="itemInput" rows="6" lang="zh-CN" placeholder="例如：黄瓜二斤 尖椒一斤 油菜半斤&#10;可直接换行、粘贴或使用手机键盘语音"></textarea>
+          <div class="input-actions"><button id="clearInput">清空</button><button class="primary" id="recognizeButton">识别清单</button></div>
+          <div id="draftSection" hidden><div class="result-heading"><h3>识别结果 <span id="draftCount"></span></h3><span id="recognizeHint"></span></div><div id="draftItems" class="draft-list"></div><button class="primary wide" id="confirmDraft">加入这家清单</button></div>
+          <details class="quick-details"><summary>快捷点选</summary><div id="categoryButtons" class="category-buttons"></div><div id="productButtons" class="choice-buttons"></div><div class="quick-grid"><input id="quickName" placeholder="商品"><input id="quickQty" inputmode="decimal" placeholder="数量"><select id="quickUnit"><option value="">不填单位</option><option>斤</option><option>两</option><option>个</option><option>颗</option><option>捆</option><option>袋</option><option>包</option><option>箱</option><option>瓶</option><option>盒</option><option>根</option><option>条</option><option>元</option></select><button id="quickAdd" class="primary">加入</button></div><div id="qtyButtons" class="choice-buttons compact"></div></details>
+        </section>
+        <section class="panel order-panel">
+          <div class="panel-heading"><div><span class="eyebrow">已加入 <span id="itemCount">0 条</span></span><h2 id="activeName">采购清单</h2></div><span id="cutBadge" class="cut-badge"></span></div>
+          <div id="items" class="order-items"></div>
+          <div class="order-tools"><button id="copyPrevious">复制上一家</button><button id="copyOrder">复制此单</button></div>
+          <button class="primary wide finish-button" id="finishNext">完成并下一家</button>
+        </section>
+      </div>
+    </section>
+
+    <section id="usersView" class="view" hidden>
+      <div class="view-title"><div><span class="eyebrow">长期保存</span><h2>用户清单</h2></div><span id="userCount" class="muted"></span></div>
+      <form id="userForm" class="panel user-form"><input id="userName" maxlength="80" placeholder="姓名" required><label class="check-label"><input id="userNeedsCut" type="checkbox">需要剪裁</label><button class="primary">添加用户</button></form>
+      <div class="toolbar"><input id="userSearch" type="search" placeholder="搜索姓名"></div>
+      <div id="usersList" class="card-list"></div>
+    </section>
+
+    <section id="printView" class="view" hidden>
+      <div class="view-title"><div><span class="eyebrow">A4 自适应</span><h2>打印</h2><p id="layoutInfo" class="muted"></p></div><button class="primary" id="printButton">打印 / 导出 PDF</button></div>
+      <div class="print-controls panel">
+        <div class="control-row"><label>纸张<select id="orientation"><option value="portrait">竖版</option><option value="landscape">横版</option></select></label><label>密度<select id="density"><option value="comfortable">舒适</option><option value="standard" selected>标准</option><option value="compact">省纸</option></select></label><label class="font-control">字号 <output id="fontValue">13</output><input id="fontSize" type="range" min="11" max="16" value="13" step="1"></label></div>
+        <div class="selection-actions"><label class="check-label"><input id="pendingOnly" type="checkbox" checked>只选待打印</label><button id="selectAllPrint">全选</button><button id="selectNonePrint">清空选择</button></div>
+        <div id="printChoices"></div>
+      </div>
+      <p class="print-tip">打印时请选择 100% 缩放，并关闭浏览器页眉页脚。</p>
+      <div id="paperViewport"><div id="papers"></div></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="主导航">
+    <button data-view="today" class="active"><span>⌂</span>今日</button>
+    <button data-view="entry"><span>＋</span>录入</button>
+    <button data-view="users"><span>♙</span>用户</button>
+    <button data-view="print"><span>▤</span>打印</button>
+  </nav>
+
+  <footer><button id="exportData">备份</button><button id="importData">导入</button><input id="importFile" type="file" accept="application/json,.json" hidden></footer>
+</div>
+
+<div id="toast" role="status" hidden></div>
+<dialog id="editDialog"><form id="editForm"><h2 id="dialogTitle">修改</h2><label id="editLabel" for="editInput">内容</label><textarea id="editInput" rows="3" required></textarea><div class="dialog-actions"><button type="button" id="cancelEdit">取消</button><button class="primary">保存</button></div></form></dialog>
+<dialog id="deleteDialog"><h2 id="deleteTitle">确认删除？</h2><p id="deleteText"></p><div class="dialog-actions"><button id="cancelDelete">保留</button><button class="danger" id="confirmDelete">删除</button></div></dialog>
+<dialog id="printDialog"><h2>打印完成了吗？</h2><p>确认成功后，所选用户会标记为“已打印”。</p><div class="dialog-actions vertical-mobile"><button id="retryPrint">未成功，重新打印</button><button class="primary" id="confirmPrinted">成功并标记已打印</button></div></dialog>
+
+<script src="core.js"></script><script src="app.js"></script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+</body>
+</html>

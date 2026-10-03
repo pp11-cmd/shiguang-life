@@ -1,12 +1,12 @@
 {
   "name": "家家采购清单",
   "short_name": "家家采购",
-  "description": "按客户快速录入、整理和打印采购清单",
+  "description": "批量录入、用户状态管理和 A4 自适应打印",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f7fb",
-  "theme_color": "#3468ed",
+  "theme_color": "#315ee7",
   "icons": [
     { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
